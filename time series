@@ -1,0 +1,33 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import cross_val_score, train_test_split
+
+# Data cleaning 
+# 1. read the file as csv
+# 2. replace no data with nan
+# 3. remove rows with nan only
+# 3. split test and training data  
+
+FTS = pd.read_csv('financial_time_seris.csv')
+# print(FTS.shape)
+
+df = FTS.replace('$$ER: 4540,NO DATA VALUES FOUND', np.nan)
+# print(df.head(10))
+# print(df.shape)
+# print(df.columns)
+df_new = df.dropna(how = 'all')
+print('After drop nan rows', df_new.shape)
+
+df_test = df[(df['Worldscope Permanent ID'] == 'C344E1820') | (df['Worldscope Permanent ID'] == 'C392W1280') | (df['Worldscope Permanent ID'] == 'C392X3240')]
+print(df_test.shape)
+
+df_train = df.drop(df[(df['Worldscope Permanent ID'] == 'C344E1820') | (df['Worldscope Permanent ID'] == 'C392W1280') | (df['Worldscope Permanent ID'] == 'C392X3240')].index)
+print(df_train.shape)
+
+# df_test.to_csv("df_test.csv")
+# df_train.to_csv("df_test.csv")
+
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+
+# Variable selection 
+
