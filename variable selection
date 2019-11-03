@@ -1,0 +1,104 @@
+# Multiple Regression Variable Selection
+def mr(selection=False):
+    import os
+    os.chdir(r'D:\Documents\Teach\5106\5106 2019-08\01')
+    import pandas as pd
+    h=pd.read_csv('HDB_Data500.csv',index_col=0)
+    #print(h.head(0)) # dataset's variable names
+    
+    yvar='resale_price'
+    modeleq = yvar + ' ~'
+    for xvar in ( # Insert new 'x variable' into a row, ending with ','
+        'storey_range_lower',
+        'storey_range_upper',
+        'floor_area_sqm',
+        'lease_commence_year',
+        'transaction_month',
+        'town',
+        'flat_model',
+        'flat_type',
+        'no_of_rooms',
+        'block_number',
+        'postal_code',
+        'postal_code_2digit',
+        ):
+        if modeleq[-1] == '~':
+            modeleq = modeleq + ' ' + xvar
+        else:
+            modeleq = modeleq + ' + ' + xvar
+
+    #import matplotlib.pyplot as pl
+    #%matplotlib inline
+    #import numpy as np
+
+    import statsmodels.api as sm
+    from statsmodels.formula.api import ols
+    
+    bmodeleq=modeleq
+    if selection :
+        print('Variable Selection using p-value & PR(>F):')
+        minfpv = 1.0
+
+        while True :
+            #Specify C() for Categorical, else could be interpreted as numeric:
+            #hout=ols('resale_price ~ floor_area_sqm + C(flat_type)', data=h).fit()
+            hout=ols(modeleq, data=h).fit()
+            if modeleq.find(' + ') == -1 :
+                # 1 xvar left
+                break
+
+            #print(dir(hout)) gives all the attributes of .fit(), e.g. .fvalue & .f_pvalue
+            fpv=hout.f_pvalue
+            if fpv < minfpv :
+                minfpv=fpv
+                bmodeleq=modeleq
+            print('\nF-statistic =',hout.fvalue,'       PR(>F) =',fpv)
+
+            prf = sm.stats.anova_lm(hout, typ=3)['PR(>F)']
+            maxp=max(prf[1:])
+            
+            #print('\n',dict(prf))
+
+            xdrop = prf[maxp==prf].axes[0][0] # 1st element of row-label .axes[0]
+            #if xdrop.find('Intercept') != -1 :
+            #    break
+
+            # xdrop removed from model equation:
+            if (modeleq.find('~ ' + xdrop + ' + ') != -1): 
+                modeleq = modeleq.replace('~ ' + xdrop + ' + ','~ ') 
+            elif (modeleq.find('+ ' + xdrop + ' + ') != -1): 
+                modeleq = modeleq.replace('+ ' + xdrop + ' + ','+ ')
+            else:
+                modeleq = modeleq.replace(' + ' + xdrop,'') 
+            #print('Model equation:',modeleq,'\n')
+
+            print('Variable to drop:',xdrop,'       p-value =',prf[xdrop])
+            #print('\nVariable left:\n'+str(prf[maxp!=prf][:-1]),'\n')
+        
+        print('\nF-statistic =',hout.fvalue,'       PR(>F) =',hout.f_pvalue)
+        print('Variable left:\n'+str(prf[maxp!=prf][:-1]),'\n')
+        #input("found intercept")
+        print('Best model equation:',bmodeleq)
+        print('Minimum PR(>F) =',minfpv,'\n')
+        
+    hout=ols(bmodeleq, data=h).fit()
+
+    print(sm.stats.anova_lm(hout, typ=1))
+    #print(anova) # Anova table with 'Treatment' broken up
+    hsum=hout.summary()
+
+    print('\n',hsum)
+    
+    last=3 #number of bottom p-values to display with more precision
+    #p-values are not in general the same as PR(>F) from ANOVA
+    print("\nLast",last,"x-coefficients' p-values:")
+    nxvar=len(hout.pvalues)
+    for i in range(last,0,-1):
+        print('    ',hout.pvalues.axes[0][nxvar-i],'    ',hout.pvalues[nxvar-i])
+
+    # Output Coefficient table:
+    #from IPython.core.display import HTML
+    #HTML(hout.summary().tables[1].as_html()) #.tables[] from 0 to 3
+
+mr(True) # do Variable Selection
+#mr() # do multiple regression once
