@@ -1,26 +1,38 @@
 import pandas as pd
 import numpy as np
-# from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.model_selection import cross_val_score, train_test_split
 
-# Data cleaning 
+### Data cleaning ###
 # 1. read the file as csv
-# 2. replace the error strings with nan
+# 2. replace no data with nan
 # 3. remove rows with nan only
-# 4. remove columns with nan only
-# 3. split test and training data  
+# 4. 
+# 5. split test and training data
 
-FTS = pd.read_csv("/Users/zongdongyu/Desktop/world_ts.csv", low_memory=False)
-print(FTS.shape)
+print("Hello World!")
+FTS = pd.read_csv("/Users/zongdongyu/Desktop/ts/world_ts.csv", low_memory=False)
+print("FTS", FTS.shape)
 
 temp = FTS.replace('$$ER: 4540,NO DATA VALUES FOUND', np.nan)
 temp1 = temp.replace('$$ER: E100,INVALID CODE OR EXPRESSION ENTERED', np.nan)
 df = temp1.replace('$$ER: E100,NOT AVAILABLE FOR THIS TYPE OF ITEM', np.nan)
 print(df.shape)
-# print(df.head(10))
+
 df_temp = df.dropna(how='all')
 df_new =df_temp.dropna(1,how = 'all')
 print('After drop nan rows and columns', df_new.shape)
-df_new.to_csv("C:/Users/ut2pnp/Desktop/ts/ts_new.csv")
+# df_new.to_csv("/Users/zongdongyu/Desktop/ts/ts_new.csv")
+
+df_new['fill_count'] = df_new.apply(lambda x: x.count(), axis=1)
+# print(df_new['fill_count'].head(30))
+print(df_new['fill_count'].describe())
+
+df_new = df.drop(df_new[df_new['fill_count'] < 300].index)
+print(df_new['fill_count'].describe())
+
+
+
+
 
 # df_test = df[(df['Worldscope Permanent ID'] == 'C344E1820') | (df['Worldscope Permanent ID'] == 'C392W1280') | (df['Worldscope Permanent ID'] == 'C392X3240')]
 # print(df_test.shape)
