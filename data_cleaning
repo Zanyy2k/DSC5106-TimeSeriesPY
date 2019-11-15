@@ -1,37 +1,57 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import cross_val_score, train_test_split
+# from sklearn.model_selection import cross_val_score, train_test_split
 
-### Data cleaning ###
+# Data cleaning 
 # 1. read the file as csv
-# 2. replace no data with nan
+# 2. replace the error strings with nan
 # 3. remove rows with nan only
-# 4. 
-# 5. split test and training data
+# 4. remove columns with nan only
+# 3. split test and training data  
 
-print("Hello World!")
-FTS = pd.read_csv("/Users/zongdongyu/Desktop/ts/world_ts.csv", low_memory=False)
-print("FTS", FTS.shape)
+FTS = pd.read_csv("C:/Users/ut2pnp/Desktop/ts/Financial_Info_SG_Firms(Project).csv", low_memory=False)
+print("Read the csv data file : ", FTS.shape)
 
+# Replace all the error message with null
 temp = FTS.replace('$$ER: 4540,NO DATA VALUES FOUND', np.nan)
 temp1 = temp.replace('$$ER: E100,INVALID CODE OR EXPRESSION ENTERED', np.nan)
 df = temp1.replace('$$ER: E100,NOT AVAILABLE FOR THIS TYPE OF ITEM', np.nan)
-print(df.shape)
+print("Replaced all error messages with NULL")
 
+# Drop rows and columns that are empty
 df_temp = df.dropna(how='all')
 df_new =df_temp.dropna(1,how = 'all')
-print('After drop nan rows and columns', df_new.shape)
-# df_new.to_csv("/Users/zongdongyu/Desktop/ts/ts_new.csv")
+print('Drop Null Rows and Columns : ', df_new.shape)
 
+# For each row, count number of non-null columns, store in fill_count column
 df_new['fill_count'] = df_new.apply(lambda x: x.count(), axis=1)
-# print(df_new['fill_count'].head(30))
 print(df_new['fill_count'].describe())
 
-df_new = df.drop(df_new[df_new['fill_count'] < 300].index)
+# Drop all rows that have count less than 100
+df_new = df_new.drop(df_new[df_new['fill_count'] < 100].index)
+print("Dropped rows with fill count less than 100", df_new.shape)
 print(df_new['fill_count'].describe())
 
+# For each column, count the number of non-null rows, 
+# store the column name and corresponding number
+
+column_name  = list(df_new.columns.values)
+print(column_name)
+column_nan_count = list(df_new.isnull().sum().values)
+# print(column_nan_count.head(10))
+# print(column_nan_count.dtype)
+
+column_count = pd.DataFrame(column_name,column_nan_count)
+# column_count = column_name.to_frame().join(column_nan_count)
+# print(column_count.head(10))
+print(column_count.shape)
 
 
+# for col in data.columns: 
+#     print("HI")
+# print(df_new.notnull().sum())
+# print(column_nan_count.head(10))
+# df_new.to_csv("C:/Users/ut2pnp/Desktop/ts/ts_new.csv")
 
 
 # df_test = df[(df['Worldscope Permanent ID'] == 'C344E1820') | (df['Worldscope Permanent ID'] == 'C392W1280') | (df['Worldscope Permanent ID'] == 'C392X3240')]
