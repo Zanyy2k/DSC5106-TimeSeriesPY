@@ -1,66 +1,82 @@
 import pandas as pd
 import numpy as np
-# from sklearn.model_selection import cross_val_score, train_test_split
 
 # Data cleaning 
 # 1. read the file as csv
 # 2. replace the error strings with nan
-# 3. remove rows with nan only
-# 4. remove columns with nan only
-# 3. split test and training data  
+# 3. remove all rows where 'Market Capitalization Fiscal Period End' is empty
+# 4. remove rows with nan only
+# 5. remove columns with nan only
+# 6. split test and training data  
 
-FTS = pd.read_csv("C:/Users/ut2pnp/Desktop/ts/Financial_Info_SG_Firms(Project).csv", low_memory=False)
-print("Read the csv data file : ", FTS.shape)
+pd.options.mode.chained_assignment = None 
+wts = pd.read_csv("/Users/zongdongyu/Desktop/ts/world_ts.csv", low_memory=False)
+print("Read the csv data file : ", wts.shape)
 
-# Replace all the error message with null
-temp = FTS.replace('$$ER: 4540,NO DATA VALUES FOUND', np.nan)
-temp1 = temp.replace('$$ER: E100,INVALID CODE OR EXPRESSION ENTERED', np.nan)
-df = temp1.replace('$$ER: E100,NOT AVAILABLE FOR THIS TYPE OF ITEM', np.nan)
-print("Replaced all error messages with NULL")
+# Drop rows where 'Market Capitalization Fiscal Period End' is empty
+wts = wts[wts['Market Capitalization Fiscal Period End'].notnull()]
+print(wts.shape)
+
+# Replace all blank & error message with null
+temp = wts.replace(r'\s+', np.nan, regex=True)
+temp1 = temp.replace('$$ER: 4540,NO DATA VALUES FOUND', np.nan)
+temp2 = temp1.replace('$$ER: E100,INVALID CODE OR EXPRESSION ENTERED', np.nan)
+temp3 = temp2.replace('$$ER: E100,NOT AVAILABLE FOR THIS TYPE OF ITEM', np.nan)
+print("Replaced all blank & error messages with NULL")
 
 # Drop rows and columns that are empty
-df_temp = df.dropna(how='all')
-df_new =df_temp.dropna(1,how = 'all')
-print('Drop Null Rows and Columns : ', df_new.shape)
+df_temp = temp3.dropna(how='all')
+df_temp1 =df_temp.dropna(1,how = 'all')
+print("Dropped NULL rows & columns : ", df_temp1.shape)
 
 # For each row, count number of non-null columns, store in fill_count column
-df_new['fill_count'] = df_new.apply(lambda x: x.count(), axis=1)
-print(df_new['fill_count'].describe())
+df_temp1['fill_count'] = df_temp1.apply(lambda x: x.count(), axis=1)
+print(df_temp1['fill_count'].describe())
 
 # Drop all rows that have count less than 100
-df_new = df_new.drop(df_new[df_new['fill_count'] < 100].index)
-print("Dropped rows with fill count less than 100", df_new.shape)
-print(df_new['fill_count'].describe())
+df_temp1 = df_temp1.drop(df_temp1[df_temp1['fill_count'] < 100].index)
+print("Dropped rows with fill count less than 100", df_temp1.shape)
 
-# For each column, count the number of non-null rows, 
-# store the column name and corresponding number
+# Count & store non-null rows for each column
+column_name  = list(df_temp1.columns.values)
+column_nan_count = list(df_temp1.notnull().sum())
+column_counts = pd.DataFrame({"column_name":column_name, "count":column_nan_count})
+# print(column_counts.shape)
+print(column_counts.describe())
 
-column_name  = list(df_new.columns.values)
-print(column_name)
-column_nan_count = list(df_new.isnull().sum().values)
-# print(column_nan_count.head(10))
-# print(column_nan_count.dtype)
+# Keep columns with count more than 10000
+column_keep = column_counts[column_counts['count'] > 5000]
+print("columns with count > 5000 : ", column_keep.shape)
+name_list = list(column_keep['column_name'])
+name_list.remove('fill_count')
 
-column_count = pd.DataFrame(column_name,column_nan_count)
-# column_count = column_name.to_frame().join(column_nan_count)
-# print(column_count.head(10))
-print(column_count.shape)
+# store the changes
+df_cleaned = df_temp1[name_list]
+print("empty cells count : ",df_cleaned.isna().sum().sum())
 
+# fill the empty cells with mean value for each column
+# for each column fill na with mean, if categorical fill 'others'
+cat_column = {'Worldscope Permanent ID','DS_CODE','Indicator Restated Data Exists', 'Data Update Indicator','Auditors Opinion','Accounting Method For Long Term Investment >50%' , 'Accounting Standards Followed','Currency Of Document'}  
+for name in name_list:
+    print('name : ', name)
+    if name in cat_column:
+        df_cleaned[name] = df_cleaned[name].fillna(method='ffill')
+    else:
+        print(pd.to_numeric(df_cleaned[name], errors='coerce').mean())
+        df_cleaned[name] = df_cleaned[name].fillna(df_cleaned[name].astype(float).mean())
 
-# for col in data.columns: 
-#     print("HI")
-# print(df_new.notnull().sum())
-# print(column_nan_count.head(10))
-# df_new.to_csv("C:/Users/ut2pnp/Desktop/ts/ts_new.csv")
+print("empty cells count : ",df_cleaned.isna().sum().sum())
+print(df_cleaned.shape)
+df_cleaned.to_csv("/Users/zongdongyu/Desktop/ts/ts_cleaned.csv",index=False)
 
+# df_cleaned = pd.read_csv("/Users/zongdongyu/Desktop/ts/ts_cleaned.csv", low_memory=False)
 
-# df_test = df[(df['Worldscope Permanent ID'] == 'C344E1820') | (df['Worldscope Permanent ID'] == 'C392W1280') | (df['Worldscope Permanent ID'] == 'C392X3240')]
-# print(df_test.shape)
+# split data into test and training sets
+df_test = df_cleaned[(df_cleaned['Worldscope Permanent ID'] == 'C344E1820') | (df_cleaned['Worldscope Permanent ID'] == 'C392W1280') | (df_cleaned['Worldscope Permanent ID'] == 'C392X3240')]
+print(df_test.shape)
 
-# df_train = df.drop(df[(df['Worldscope Permanent ID'] == 'C344E1820') | (df['Worldscope Permanent ID'] == 'C392W1280') | (df['Worldscope Permanent ID'] == 'C392X3240')].index)
-# print(df_train.shape)
+df_train = df_cleaned.drop(df_cleaned[(df_cleaned['Worldscope Permanent ID'] == 'C344E1820') | (df_cleaned['Worldscope Permanent ID'] == 'C392W1280') | (df_cleaned['Worldscope Permanent ID'] == 'C392X3240')].index)
+print(df_train.shape)
 
-# df_test.to_csv("df_test.csv")
-# df_train.to_csv("df_test.csv")
-
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+df_test.to_csv("/Users/zongdongyu/Desktop/ts/predictionSet.csv", index=False)
+df_train.to_csv("/Users/zongdongyu/Desktop/ts/trainingSet.csv", index=False)
