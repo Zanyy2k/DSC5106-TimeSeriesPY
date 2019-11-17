@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import StandardScaler, Normalizer
 
 # Data cleaning 
 # 1. read the file as csv
@@ -7,7 +8,8 @@ import numpy as np
 # 3. remove all rows where 'Market Capitalization Fiscal Period End' is empty
 # 4. remove rows with nan only
 # 5. remove columns with nan only
-# 6. split test and training data  
+# 6. normalized the data
+# 7. split test and training data  
 
 pd.options.mode.chained_assignment = None 
 wts = pd.read_csv("/Users/zongdongyu/Desktop/ts/world_ts.csv", low_memory=False)
@@ -50,16 +52,18 @@ print("columns with count > 5000 : ", column_keep.shape)
 name_list = list(column_keep['column_name'])
 name_list.remove('fill_count')
 
-# store the changes
+# Store the changes
 df_cleaned = df_temp1[name_list]
 print("empty cells count : ",df_cleaned.isna().sum().sum())
 
-# fill the empty cells with mean value for each column
-# for each column fill na with mean, if categorical fill 'others'
+# Fill the empty cells with mean value for each column
+# For each column fill na with mean, if categorical fill 'others'
 cat_column = {'Worldscope Permanent ID','DS_CODE','Indicator Restated Data Exists', 'Data Update Indicator','Auditors Opinion','Accounting Method For Long Term Investment >50%' , 'Accounting Standards Followed','Currency Of Document'}  
+dummmy_cat = []
 for name in name_list:
     print('name : ', name)
     if name in cat_column:
+        dummmy_cat.append(name)
         df_cleaned[name] = df_cleaned[name].fillna(method='ffill')
     else:
         print(pd.to_numeric(df_cleaned[name], errors='coerce').mean())
@@ -67,16 +71,26 @@ for name in name_list:
 
 print("empty cells count : ",df_cleaned.isna().sum().sum())
 print(df_cleaned.shape)
+
+# Create dummy for the categorical variables
+dummmy_cat.remove('Worldscope Permanent ID')
+dummmy_cat.remove('DS_CODE')
+print("Create dummy : ",dummmy_cat)
+
+df_cleaned = pd.get_dummies(df_cleaned,columns=dummmy_cat)
+print(df_cleaned.shape)
+
 df_cleaned.to_csv("/Users/zongdongyu/Desktop/ts/ts_cleaned.csv",index=False)
 
-# df_cleaned = pd.read_csv("/Users/zongdongyu/Desktop/ts/ts_cleaned.csv", low_memory=False)
 
-# split data into test and training sets
-df_test = df_cleaned[(df_cleaned['Worldscope Permanent ID'] == 'C344E1820') | (df_cleaned['Worldscope Permanent ID'] == 'C392W1280') | (df_cleaned['Worldscope Permanent ID'] == 'C392X3240')]
-print(df_test.shape)
+# # df_cleaned = pd.read_csv("/Users/zongdongyu/Desktop/ts/ts_cleaned.csv", low_memory=False)
 
-df_train = df_cleaned.drop(df_cleaned[(df_cleaned['Worldscope Permanent ID'] == 'C344E1820') | (df_cleaned['Worldscope Permanent ID'] == 'C392W1280') | (df_cleaned['Worldscope Permanent ID'] == 'C392X3240')].index)
-print(df_train.shape)
+# # split data into test and training sets
+# df_test = df_cleaned[(df_cleaned['Worldscope Permanent ID'] == 'C344E1820') | (df_cleaned['Worldscope Permanent ID'] == 'C392W1280') | (df_cleaned['Worldscope Permanent ID'] == 'C392X3240')]
+# print(df_test.shape)
 
-df_test.to_csv("/Users/zongdongyu/Desktop/ts/predictionSet.csv", index=False)
-df_train.to_csv("/Users/zongdongyu/Desktop/ts/trainingSet.csv", index=False)
+# df_train = df_cleaned.drop(df_cleaned[(df_cleaned['Worldscope Permanent ID'] == 'C344E1820') | (df_cleaned['Worldscope Permanent ID'] == 'C392W1280') | (df_cleaned['Worldscope Permanent ID'] == 'C392X3240')].index)
+# print(df_train.shape)
+
+# df_test.to_csv("/Users/zongdongyu/Desktop/ts/training Set.csv", index=False)
+# df_train.to_csv("/Users/zongdongyu/Desktop/ts/trainingSet.csv", index=False)
