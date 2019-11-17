@@ -1,0 +1,119 @@
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+# import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.svm import SVC
+from sklearn import linear_model
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import cross_val_score
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, Normalizer
+
+# store the data into different df 
+df_cleaned = pd.read_csv("/Users/zongdongyu/Desktop/ts/ts_cleaned.csv", low_memory=False)
+print(df_cleaned.shape)
+
+# remove the first two column 
+col_remove = ['Worldscope Permanent ID','DS_CODE']
+df_cleaned = df_cleaned.drop(columns=col_remove)
+print(df_cleaned.shape)
+
+y = 'Market Capitalization Fiscal Period End'
+
+# split data into test and training sets
+train, test = train_test_split(df_cleaned, test_size=0.2)
+
+
+
+# test sets
+test_dataset = df_cleaned.sample(3000)
+print(test_dataset.shape)
+realY_val = test_dataset[y]
+df_test = test_dataset.drop(columns=y)
+print(df_test.shape)
+
+
+# df_train = pd.read_csv('/kaggle/input/data-science-london-scikit-learn/train.csv',header=None)
+# print(df_train.shape) # rows*columns of the dataframe
+# print(df_train.info()) # datatype for each column
+# print(df_train.head()) # first 5 rows of the dataframe
+# print(df_train.describe()) # display mean, std, min, 25%, 50%, 75% & max for each column
+# df_labels = pd.read_csv('/kaggle/input/data-science-london-scikit-learn/trainLabels.csv',header=None)
+# print(df_labels.shape)
+# df_test = pd.read_csv('/kaggle/input/data-science-london-scikit-learn/test.csv',header=None)
+# print(df_test.shape)
+
+# # Split the training data into train n test partitions 
+
+# X_train, X_test, y_train, y_test = train_test_split(df_train, df_labels, test_size=0.30, random_state=101)
+# print(X_train.shape, y_train.shape)
+# print(X_test.shape, y_test.shape)
+
+# print("Accuracy without normalize the training data")
+# # DECISON TREE
+# dtree_model = DecisionTreeClassifier()
+# dtree_model.fit(X_train,y_train.values.ravel())
+# dtree_predicted = dtree_model.predict(X_test)
+# print('Decision Tree',accuracy_score(y_test, dtree_predicted))
+
+# # KNN
+# knn_model = KNeighborsClassifier()
+# knn_model.fit(X_train,y_train.values.ravel())
+# predicted= knn_model.predict(X_test)
+# print('KNN',accuracy_score(y_test, predicted))
+
+# # LOGISTIC REGRESSION
+# lr_model = LogisticRegression(solver = 'saga')
+# lr_model.fit(X_train,y_train.values.ravel()) #MODEL TRAINING
+# lr_predicted = lr_model.predict(X_test) # TEST WITH THE TRAINING DATA
+# print('Logistic Regression',accuracy_score(y_test, lr_predicted)) #RESULT 
+
+# # RANDOM FOREST
+# rfc_model = RandomForestClassifier(n_estimators = 100,random_state = 99)
+# rfc_model.fit(X_train,y_train.values.ravel())
+# predicted = rfc_model.predict(X_test)
+# print('Random Forest',accuracy_score(y_test,predicted))
+
+# # SVM
+# svc_model = SVC(gamma = 'auto')
+# svc_model.fit(X_train,y_train.values.ravel())
+# svc_predicted = svc_model.predict(X_test)
+# print('SVM',accuracy_score(y_test, svc_predicted))
+
+# print("Normalize the training data")
+# norm = Normalizer()
+# norm_train_data = norm.fit_transform(df_train)
+
+# print("Accuracy after normalize the training data")
+# #DECISON TREE
+# dtree_model = DecisionTreeClassifier()
+# print('Decision Tree',cross_val_score(dtree_model,norm_train_data, df_labels.values.ravel(), cv=10).mean())
+
+# #KNN
+# knn_model = KNeighborsClassifier(n_neighbors = 10)
+# knn_model.fit(X_train,y_train.values.ravel())
+# print('KNN',cross_val_score(knn_model,norm_train_data, df_labels.values.ravel(), cv=10).mean())
+
+# #LOGISTIC REGRESSION
+# lr_model = LogisticRegression(solver = 'saga')
+# print('Logistic Regression',cross_val_score(lr_model,norm_train_data, df_labels.values.ravel(), cv=10).mean())
+
+# # RANDOM FOREST
+# rfc_model = RandomForestClassifier(n_estimators = 100,random_state = 100)
+# print('Random Forest',cross_val_score(rfc_model,norm_train_data, df_labels.values.ravel(), cv=10).mean())
+
+# #SVM
+# svc_model = SVC(gamma = 'auto')
+# print('SVM',cross_val_score(svc_model,norm_train_data, df_labels.values.ravel(), cv=10).mean())
+
+# # predict test
+# submission = pd.DataFrame(knn_model.predict(df_test))
+# print(submission.shape)
+# submission.columns = ['Solution']
+# submission['Id'] = np.arange(1,submission.shape[0]+1)
+# submission = submission[['Id', 'Solution']]
+# submission.head()
